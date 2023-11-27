@@ -2,10 +2,10 @@
 // Your javascript goes here
 
 
-const icon1  = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+const uncheckedIcon  = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
                     <circle cx="16" cy="16" r="12" stroke="#8a8a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 6" />
                 </svg>`
-const icon2 = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+const checkedIcon = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="12" r="10" fill="#303030"></circle>
     <path
       d="M17.2738 8.52629C17.6643 8.91682 17.6643 9.54998 17.2738 9.94051L11.4405 15.7738C11.05 16.1644 10.4168 16.1644 10.0263 15.7738L7.3596 13.1072C6.96908 12.7166 6.96908 12.0835 7.3596 11.693C7.75013 11.3024 8.38329 11.3024 8.77382 11.693L10.7334 13.6525L15.8596 8.52629C16.2501 8.13577 16.8833 8.13577 17.2738 8.52629Z"
@@ -113,6 +113,7 @@ function toggleGuide() {
 //This function accepts an event from the whole Setup guide Ul
 //and then filters it to see what item was clicked
 // Then toggles that item open
+//This is the Entry event into the Setup Items Drop Down
 function toggle(event) {
         let clickedItem
         let unclickedItems
@@ -120,6 +121,7 @@ function toggle(event) {
         if (event.target.id === "toggle-item-btn") {
         //parent element of clicked item
         clickedItem = event.target.parentElement
+
         
         //find the HTML element that was clicked
         //remove it from the array
@@ -133,19 +135,42 @@ function toggle(event) {
 
 
 
-
 //Show Clicked item
 function showItem(item) {
     item.classList.toggle('selected')
-    item.querySelector('#item-info').classList.toggle('selected')
-    item.querySelector('#item-img').classList.toggle('selected') 
 }
 
+
+function showNextItem(toChangeIndex, totalSteps) {
+
+       // console.log(toChangeIndex)
+        //console.log(totalSteps)
+
+        hide(setupItems)
+
+        
+        let nextUncompletedStep
+
+         totalSteps.findIndex((element,index) => {
+                 if (index > toChangeIndex) {   
+                         nextUncompletedStep = index
+                        //console.log(toChangeIndex) 
+                        return element === false 
+                }
+        })
+
+        //find Next Item
+        let nextItem = setupItems[nextUncompletedStep]
+
+       // console.log(nextItem)
+
+        showItem(nextItem)     
+
+ }
+        
 //hide open items
 function hideItem(item) {
     item.classList.remove('selected')
-    item.querySelector('#item-info').classList.remove('selected')
-    item.querySelector('#item-img').classList.remove('selected') 
 }
 
 
@@ -159,44 +184,63 @@ function hide(array) {
 
 
 //Check for Previous Session Storage
-
 function initialise() {
         if (sessionStorage.getItem('progress')) {
                 totalSteps = JSON.parse(sessionStorage.getItem('progress'))
                 updateDOM(totalSteps)
         } else {
-                totalSteps = [false, false, false, false, false]
+                totalSteps = new Array(setupItems.length).fill(false)
                 sessionStorage.setItem('progress',JSON.stringify(totalSteps))
                 updateDOM(totalSteps)
         }
 }
 
 
-
+// here
 //finds the setup item on which the check button was clicked
-function buttonChange(event) {
+async function buttonChange(event) {
+        //Somewhat of a live Steps List
+        let steps = Array.from(document.getElementById('items').children)
+        //console.log('fjfhf')
         let toChangeIndex = setupItems.findIndex(function (setupItem) {
+                
                 return setupItem.contains(event.target)  
         })
 
+
+        //Was the item that triggered this event Checked or Unchecked
+
+        let isChecked = steps[toChangeIndex].classList.contains("checked")
+        console.log(isChecked)
+        
+
+
+
+        
 
 
         //Updates total Step array local value
         totalSteps[toChangeIndex] = !totalSteps[toChangeIndex]
 
-        //Update DOM
-        updateDOM(totalSteps)
-        
-
         //update Session Storage 
         sessionStorage.setItem('progress',JSON.stringify(totalSteps))
         
+        
+        //Update DOM
+        updateDOM(totalSteps,toChangeIndex,isChecked)
+
 }
 
 
 
 
-function updateDOM(totalSteps) {
+function updateDOM(...theArgs) {
+
+        let totalSteps = theArgs[0]
+        let toChangeIndex = theArgs[1] 
+        let isChecked = theArgs[2]
+
+        console.log(isChecked)
 
         //Update Progress Bars
         let bars=[]
@@ -207,33 +251,52 @@ function updateDOM(totalSteps) {
         let completed = totalSteps.filter((element) => element === true)
         progress.querySelector('.progress-num').innerHTML = `${completed.length} / ${totalSteps.length} Completed`       
 
-
+//update check icons
         totalSteps.map(function (step, index) {
+                setupItems[index].classList.remove('checked')
                 if (step) {
                         //Change button icon
-                        setupItems[index].querySelector('button').innerHTML = icon2
+                        setupItems[index].querySelector('button').innerHTML = checkedIcon
+                        setupItems[index].classList.add('checked')
 
+                        //console.log('true')         
                 } else { 
-                        setupItems[index].querySelector('button').innerHTML = icon1
+                        setupItems[index].querySelector('button').innerHTML = uncheckedIcon
+                        //console.log('false')
                 } 
         })
+
+
+
+
+        // toChangeIndex ? setupItems[toChangeIndex].classList.add('checked')  :
+        // toChangeIndex === 0 ? setupItems[toChangeIndex].classList.add('checked') : ''
+
+        if (isChecked) {
+                //Show Unclicked Itwm
+        
+        } else {
+
+        //Show next Item
+        
+        //This is to Ensure that during the initial initialising Phase
+        //an Undefined Value is not sent for Parameter "toChangeIndex"
+        //-See Initialise Function.
+        toChangeIndex ? showNextItem(toChangeIndex, totalSteps) :
+        toChangeIndex === 0 ? showNextItem(toChangeIndex, totalSteps) : ''    
+                
+        }
+
+
 }
+
+
 
 
 document.getElementById('alert-btn').addEventListener('click', toggleAlert)
 
 document.getElementById('menu-btn').addEventListener('click', toggleMenu)
 
-window.addEventListener('click', close)
-//close All Menu's
-// function close() {
-//         document.getElementById('menu').classList.contains('show') ? 
-//         document.getElementById('menu').classList.remove('show') : ""
-
-//         document.getElementById('alert').classList.contains('show') ? 
-//         document.getElementById('alert').classList.remove('show') : ""
-        
-// }
 
 function toggleAlert() {
         document.getElementById('alert').classList.toggle('show')
@@ -247,3 +310,4 @@ function toggleMenu() {
 
 
 initialise()
+
