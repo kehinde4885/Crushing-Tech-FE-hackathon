@@ -437,7 +437,7 @@ nav > div:nth-of-type(2){
   overflow: hidden;
   flex-basis: 480px;
   flex-shrink: 1;
-  min-width: 240px;
+  /*min-width: 240px;*/
   
   
 }
