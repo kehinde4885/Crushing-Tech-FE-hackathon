@@ -91,6 +91,7 @@ position: absolute;
   border-radius: 6px;
   border: none;
   cursor: pointer; 
+  color: inherit;
 }
 
 .btn1{
